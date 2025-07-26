@@ -214,7 +214,7 @@
   <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders" />
   <storageModule moduleId="refreshScope" versionNumber="2">
     <configuration configurationName="Debug">
-      <resource resourceType="PROJECT" workspacePath="/Transponder_v2" />
+      <resource resourceType="PROJECT" workspacePath="/project" />
     </configuration>
   </storageModule>
   <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets" />

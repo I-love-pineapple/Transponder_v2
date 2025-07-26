@@ -66,9 +66,12 @@ extern "C"
  *
  */
 
-#define BSP_USING_UART1
-#define BSP_UART1_TX_PIN       "PA9"
-#define BSP_UART1_RX_PIN       "PA10"
+#define BSP_USING_LPUART1
+#define BSP_LPUART1_TX_PIN       "PB11"
+#define BSP_LPUART1_RX_PIN       "PB10"
+#define BSP_USING_UART2
+#define BSP_UART2_TX_PIN       "PA2"
+#define BSP_UART2_RX_PIN       "PA3"
 
 /*-------------------------- UART CONFIG END --------------------------*/
 
