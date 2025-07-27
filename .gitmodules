@@ -1,6 +1,3 @@
 [submodule "packages/button-v1.0.1"]
 	path = packages/button-v1.0.1
 	url = git@github.com:I-love-pineapple/Transponder_v2_button.git
-[submodule "packages/packages/button-v1.0.1"]
-	path = packages/packages/button-v1.0.1
-	url = git@github.com:I-love-pineapple/Transponder_v2_button.git
