@@ -90,6 +90,7 @@
 #define RT_USING_SERIAL
 #define RT_USING_SERIAL_V1
 #define RT_SERIAL_RB_BUFSZ 64
+#define RT_USING_ADC
 #define RT_USING_PIN
 
 /* Using USB */
@@ -124,6 +125,13 @@
 
 /* Network */
 
+#define RT_USING_AT
+#define AT_DEBUG
+#define AT_USING_CLIENT
+#define AT_CLIENT_NUM_MAX 2
+#define AT_USING_CLI
+#define AT_PRINT_RAW_CMD
+#define AT_SW_VERSION_NUM 0x10301
 /* end of Network */
 
 /* Memory protection */

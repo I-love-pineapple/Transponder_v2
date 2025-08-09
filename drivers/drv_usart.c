@@ -1297,6 +1297,9 @@ int rt_hw_usart_init(void)
         uart_obj[i].config = &uart_config[i];
         uart_obj[i].serial.ops    = &stm32_uart_ops;
         uart_obj[i].serial.config = config;
+
+        // if(LPUART1 == uart_obj[i].config->Instance)
+        //     uart_obj[i].serial.config.baud_rate = BAUD_RATE_9600;
         /* register UART device */
         result = rt_hw_serial_register(&uart_obj[i].serial, uart_obj[i].config->name,
                                        RT_DEVICE_FLAG_RDWR

@@ -43,7 +43,7 @@ extern "C"
 
 #define BSP_CLOCK_SOURCE                  ("HSI")
 #define BSP_CLOCK_SOURCE_FREQ_MHZ         ((int32_t)0)
-#define BSP_CLOCK_SYSTEM_FREQ_MHZ         ((int32_t)80)
+#define BSP_CLOCK_SYSTEM_FREQ_MHZ         ((int32_t)16)
 
 /*-------------------------- CLOCK CONFIG END --------------------------*/
 
@@ -187,7 +187,7 @@ extern "C"
  *
  */
 
-/*#define BSP_USING_ADC1*/
+#define BSP_USING_ADC1
 /*#define BSP_USING_ADC2*/
 /*#define BSP_USING_ADC3*/
 
@@ -366,6 +366,9 @@ extern "C"
 /*#define BSP_USING_ON_CHIP_FLASH*/
 
 /*-------------------------- ON_CHIP_FLASH CONFIG END --------------------------*/
+
+void power_io_init(void);
+void lpuart1_reconfig(void);
 
 #ifdef __cplusplus
 }
