@@ -18,8 +18,7 @@ extern int e35_example_init(void);
 
 int main(void)
 {
-    // at_client_init("lpuart1", 1024, 128);
-    e35_example_init();
+    //e35_example_init();
     while (1)
     {
         rt_thread_mdelay(1000);

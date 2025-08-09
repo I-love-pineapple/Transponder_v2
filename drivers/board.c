@@ -93,29 +93,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
 
 void power_io_init(void)
 {
-    /* 电池电压检测使能引脚 */
-    rt_pin_mode(V_BAT_EN, PIN_MODE_OUTPUT);
-    rt_pin_write(V_BAT_EN, PIN_HIGH);
-
     /* 蓝牙模块电源控制引脚 */
     rt_pin_mode(RF_EN, PIN_MODE_OUTPUT_OD);
     rt_pin_write(RF_EN, PIN_LOW);
 }
 
-//#define SAMPLE_UART_NAME       "lpuart1"    /* 串口设备名称 */
-//static rt_device_t serial;                /* 串口设备句柄 */
-//struct serial_configure config = RT_SERIAL_CONFIG_DEFAULT;  /* 初始化配置参数 */
-
-//void lpuart1_reconfig(void)
-//{
-//    serial = rt_device_find(SAMPLE_UART_NAME);
-//    if (serial == RT_NULL)
-//    {
-//        rt_kprintf("find %s failed!\n", SAMPLE_UART_NAME);
-//        return;
-//    }
-//
-//    config.baud_rate = BAUD_RATE_9600;        //修改波特率为 9600
-//
-//    rt_device_control(serial, RT_DEVICE_CTRL_CONFIG, &config);
-//}
