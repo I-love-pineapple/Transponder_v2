@@ -233,17 +233,6 @@ int e35_example_init(void)
         return -RT_ERROR;
     }
     
-    // /* 打开UART设备 */
-    // result = rt_device_open(uart_device, RT_DEVICE_OFLAG_RDWR | RT_DEVICE_FLAG_INT_RX);
-    // if (result != RT_EOK)
-    // {
-    //     LOG_E("Failed to open lpuart1 device");
-    //     return result;
-    // }
-    
-    // /* 设置接收回调函数 */
-    // rt_device_set_rx_indicate(uart_device, uart_rx_callback);
-    
     /* 初始化E35模块 */
     result = e35_module_init();
     if (result != RT_EOK)

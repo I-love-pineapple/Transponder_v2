@@ -90,6 +90,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
 }
 #endif /* BSP_USING_ADC1 */
 
+#ifdef BSP_USING_RNG
 void HAL_RNG_MspInit(RNG_HandleTypeDef *rngHandle)
 {
 
@@ -139,6 +140,7 @@ void HAL_RNG_MspDeInit(RNG_HandleTypeDef *rngHandle)
         /* USER CODE END RNG_MspDeInit 1 */
     }
 }
+#endif /* BSP_USING_RNG */
 
 void power_io_init(void)
 {
