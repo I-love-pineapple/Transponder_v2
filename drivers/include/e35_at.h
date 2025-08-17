@@ -136,6 +136,13 @@ rt_err_t e35_device_set_trans_mode(struct e35_device *device, rt_uint8_t trans);
 rt_err_t e35_device_set_encrypt(struct e35_device *device, rt_uint8_t encrypt, rt_uint8_t key0, rt_uint8_t key1);
 
 /**
+ * 打开DRSSI
+ * @param device E35设备句柄
+ * @param drssi 0:关闭 1:开启
+ */
+rt_err_t e35_device_set_drssi(struct e35_device *device, rt_uint8_t drssi);
+
+/**
  * 进入配置模式
  * @param device E35设备句柄
  * @return RT_EOK成功，其他值失败

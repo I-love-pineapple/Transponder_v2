@@ -23,7 +23,7 @@
 #include <drv_common.h>
 
 #define DBG_TAG "drv.button"
-#define DBG_LVL DBG_LOG
+#define DBG_LVL DBG_WARNING
 #include <rtdbg.h>
 
 #ifdef PKG_USING_BUTTON

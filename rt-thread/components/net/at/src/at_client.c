@@ -788,7 +788,10 @@ static rt_err_t at_client_rx_ind(rt_device_t dev, rt_size_t size)
     {
         if (at_client_table[idx].device == dev && size > 0)
         {
-            rt_sem_release(at_client_table[idx].rx_notice);
+            if(at_client_table[idx].at_mode<1)
+                rt_sem_release(at_client_table[idx].rx_notice);
+            else
+                rt_sem_release(at_client_table[idx].recvd_data);
         }
     }
 

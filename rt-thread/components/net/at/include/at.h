@@ -152,6 +152,10 @@ struct at_client
     at_status_t status;
     char end_sign;
 
+    rt_uint8_t at_mode;        //0表示AT指令，1表示透传
+    rt_sem_t recvd_data;    //透传模式下收到数据，通知用户解析
+    void     (*user_data);    //配置设备参数，用户添加
+
     char *send_buf;
     /* The maximum supported send cmd length */
     rt_size_t send_bufsz;

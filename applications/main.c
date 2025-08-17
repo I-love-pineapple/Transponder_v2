@@ -15,10 +15,13 @@
 #include <rtdbg.h>
 
 extern int e35_example_init(void);
-
+rt_err_t my_button_init(void);
+int rf_init(void);
 int main(void)
 {
-    //e35_example_init();
+    MX_RNG_Init();
+    my_button_init();
+    rf_init();
     while (1)
     {
         rt_thread_mdelay(1000);

@@ -458,6 +458,42 @@ __exit:
     return result;
 }
 
+static rt_err_t e35_set_drssi(struct e35_device *device, rt_uint8_t drssi)
+{
+    at_response_t resp = RT_NULL;
+    rt_err_t result = RT_EOK;
+    char cmd[32];
+
+    RT_ASSERT(device);
+
+    resp = at_create_resp(64, 0, E35_AT_TIMEOUT);
+    if (resp == RT_NULL)
+    {
+        return -RT_ENOMEM;
+    }
+
+    resp->line_num = 1;
+
+    rt_mutex_take(device->lock, RT_WAITING_FOREVER);
+
+    rt_snprintf(cmd, sizeof(cmd), "AT+DRSSI=%d", drssi);
+    
+    if (at_exec_cmd(resp, cmd) != RT_EOK)
+    {
+        LOG_E("Failed to set drssi");
+        result = -RT_ERROR;
+        goto __exit;
+    }
+
+    device->config.drssi = drssi;
+    LOG_D("Set drssi: %d", drssi);
+
+__exit:
+    rt_mutex_release(device->lock);
+    at_delete_resp(resp);
+    return result;
+}
+
 /* 获取当前配置 */
 static rt_err_t e35_get_config(struct e35_device *device, struct e35_config *config)
 {
@@ -656,6 +692,11 @@ rt_err_t e35_device_set_trans_mode(struct e35_device *device, rt_uint8_t trans)
 rt_err_t e35_device_set_encrypt(struct e35_device *device, rt_uint8_t encrypt, rt_uint8_t key0, rt_uint8_t key1)
 {
     return e35_set_encrypt(device, encrypt, key0, key1);
+}
+
+rt_err_t e35_device_set_drssi(struct e35_device *device, rt_uint8_t drssi)
+{
+    return e35_set_drssi(device, drssi);
 }
 
 rt_err_t e35_device_enter_config_mode(struct e35_device *device)
