@@ -95,6 +95,12 @@ static rt_err_t e35_init(struct e35_device *device)
         LOG_I("Firmware: %s", at_resp_get_line(resp, 1));
     }
 
+    /* 配置波特率115200 */
+    // if (at_exec_cmd(resp, "AT+UART=4,0,0") == RT_EOK)
+    // {
+    //     LOG_I("UART:%s", at_resp_get_line(resp, 1));
+    // }
+
     device->initialized = RT_TRUE;
     LOG_I("E35 module initialized successfully");
 

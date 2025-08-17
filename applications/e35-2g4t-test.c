@@ -58,7 +58,7 @@ static rt_err_t e35_module_init(void)
     LOG_I("Configuring E35 module...");
     
     /* 设置模块地址为 1,1 */
-    result = e35_device_set_address(e35_device, 1, 1);
+    result = e35_device_set_address(e35_device, 0, 0);
     if (result != RT_EOK)
     {
         LOG_E("Failed to set address");
