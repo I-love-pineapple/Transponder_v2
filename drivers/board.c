@@ -16,6 +16,9 @@
 #define V_BAT_EN    GET_PIN(B, 8)   /**< 电池电压检测使能引脚 */
 #define RF_EN       GET_PIN(B, 2)   /**< 蓝牙模块电源控制引脚 */
 
+#define DBG_TAG "board"
+#define DBG_LVL DBG_LOG
+#include <rtdbg.h>
 
 void rt_hw_board_init()
 {
@@ -91,7 +94,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
 #endif /* BSP_USING_ADC1 */
 
 #ifdef BSP_USING_RNG
-void HAL_RNG_MspInit(RNG_HandleTypeDef *rngHandle)
+void HAL_RNG_MspInit(RNG_HandleTypeDef* rngHandle)
 {
 
     RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
@@ -125,21 +128,39 @@ void HAL_RNG_MspInit(RNG_HandleTypeDef *rngHandle)
     }
 }
 
-void HAL_RNG_MspDeInit(RNG_HandleTypeDef *rngHandle)
+RNG_HandleTypeDef hrng;
+
+/* RNG init function */
+void MX_RNG_Init(void)
 {
 
-    if (rngHandle->Instance == RNG)
-    {
-        /* USER CODE BEGIN RNG_MspDeInit 0 */
+  /* USER CODE BEGIN RNG_Init 0 */
 
-        /* USER CODE END RNG_MspDeInit 0 */
-        /* Peripheral clock disable */
-        __HAL_RCC_RNG_CLK_DISABLE();
-        /* USER CODE BEGIN RNG_MspDeInit 1 */
+  /* USER CODE END RNG_Init 0 */
 
-        /* USER CODE END RNG_MspDeInit 1 */
-    }
+  /* USER CODE BEGIN RNG_Init 1 */
+
+  /* USER CODE END RNG_Init 1 */
+  hrng.Instance = RNG;
+  if (HAL_RNG_Init(&hrng) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN RNG_Init 2 */
+
+  /* USER CODE END RNG_Init 2 */
+
 }
+
+rt_uint32_t get_random(void)
+{
+    rt_uint32_t random32bit;     // 32bit 随机数变量
+    HAL_RNG_GenerateRandomNumber(&hrng, &random32bit);
+    LOG_D("random32bit: %lu", random32bit);
+    return random32bit;
+}
+MSH_CMD_EXPORT(get_random, get random number);
+
 #endif /* BSP_USING_RNG */
 
 void power_io_init(void)

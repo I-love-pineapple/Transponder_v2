@@ -3,5 +3,10 @@
   "path": "/packages/peripherals/button", 
   "ver": "v1.0.1", 
   "name": "BUTTON"
+ }, 
+ {
+  "path": "/packages/misc/state_machine", 
+  "ver": "latest", 
+  "name": "STATE_MACHINE"
  }
 ]

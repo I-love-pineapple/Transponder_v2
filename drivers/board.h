@@ -210,7 +210,7 @@ extern "C"
  *
  */
 
-//#define BSP_USING_RNG
+#define BSP_USING_RNG
 
 /*-------------------------- RNG CONFIG END --------------------------*/
 
@@ -390,7 +390,8 @@ extern "C"
 
 void power_io_init(void);
 void lpuart1_reconfig(void);
-
+void MX_RNG_Init(void);
+rt_uint32_t get_random(void);
 #ifdef __cplusplus
 }
 #endif
