@@ -7,6 +7,7 @@
 #define DBG_TAG "button"
 #define DBG_LVL DBG_LOG
 #include <rtdbg.h>
+
 /**
  * @brief 按键测试回调函数
  * @param btn 触发事件的按键实体指针
@@ -113,13 +114,6 @@ rt_err_t my_button_init(void)
     drv_button_attach_callback("key4", BUTTON_ALL_RIGGER, my_button_callback);
     drv_button_attach_callback("key5", BUTTON_ALL_RIGGER, my_button_callback);
     drv_button_attach_callback("key6", BUTTON_ALL_RIGGER, my_button_callback);
-    
-    LOG_I("  Key1: PC4");
-    LOG_I("  Key2: PB14");
-    LOG_I("  Key3: PA0");
-    LOG_I("  Key4: PA8");
-    LOG_I("  Key5: PB7");
-    LOG_I("  Key6: PA15");
     
     return RT_EOK;
 }

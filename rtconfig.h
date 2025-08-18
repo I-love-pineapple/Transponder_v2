@@ -126,11 +126,8 @@
 /* Network */
 
 #define RT_USING_AT
-#define AT_DEBUG
 #define AT_USING_CLIENT
-#define AT_CLIENT_NUM_MAX 2
-#define AT_USING_CLI
-#define AT_PRINT_RAW_CMD
+#define AT_CLIENT_NUM_MAX 1
 #define AT_SW_VERSION_NUM 0x10301
 /* end of Network */
 
@@ -305,8 +302,6 @@
 /* entertainment: terminal games and other interesting software packages */
 
 /* end of entertainment: terminal games and other interesting software packages */
-#define PKG_USING_STATE_MACHINE
-#define PKG_USING_STATE_MACHINE_LATEST_VERSION
 /* end of miscellaneous packages */
 
 /* Arduino libraries */

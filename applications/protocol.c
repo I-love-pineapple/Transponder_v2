@@ -189,37 +189,37 @@ protocol_error_t protocol_create_join_ack_frame(uint32_t gateway_id, uint32_t no
     return protocol_create_frame(FRAME_JOIN_ACK, (uint8_t*)&payload, sizeof(payload), frame_data, frame_len);
 }
 
-protocol_error_t protocol_create_answer_req_frame(uint32_t gateway_id, uint32_t node_id, 
+protocol_error_t protocol_create_press_req_frame(uint32_t gateway_id, uint32_t node_id, 
                                                  uint16_t sequence, uint8_t option, uint8_t battery,
                                                  uint8_t *frame_data, uint16_t *frame_len)
 {
-    answer_req_payload_t payload;
+    press_req_payload_t payload;
     payload.gateway_id = gateway_id;
     payload.node_id = node_id;
     payload.sequence = sequence;
     payload.option = option;
     payload.battery = battery;
     
-    return protocol_create_frame(FRAME_ANSWER_REQ, (uint8_t*)&payload, sizeof(payload), frame_data, frame_len);
+    return protocol_create_frame(FRAME_PRESS_REQ, (uint8_t*)&payload, sizeof(payload), frame_data, frame_len);
 }
 
-protocol_error_t protocol_create_answer_ack_frame(uint32_t gateway_id, uint32_t node_id, uint8_t status,
+protocol_error_t protocol_create_press_ack_frame(uint32_t gateway_id, uint32_t node_id, uint8_t status,
                                                  uint8_t *frame_data, uint16_t *frame_len)
 {
-    answer_ack_payload_t payload;
+    press_ack_payload_t payload;
     payload.gateway_id = gateway_id;
     payload.node_id = node_id;
     payload.status = status;
     memset(payload.reserved, 0, sizeof(payload.reserved));
     
-    return protocol_create_frame(FRAME_ANSWER_ACK, (uint8_t*)&payload, sizeof(payload), frame_data, frame_len);
+    return protocol_create_frame(FRAME_PRESS_ACK, (uint8_t*)&payload, sizeof(payload), frame_data, frame_len);
 }
 
 protocol_error_t protocol_create_reset_cmd_frame(uint32_t gateway_id, uint32_t node_id,
                                                 uint8_t *frame_data, uint16_t *frame_len)
 {
-    // RESET_CMD帧使用ANSWER_ACK的载荷格式
-    answer_ack_payload_t payload;
+    // RESET_CMD帧使用PRESS_ACK的载荷格式
+    press_ack_payload_t payload;
     payload.gateway_id = gateway_id;
     payload.node_id = node_id;
     payload.status = 0x00;
@@ -302,39 +302,39 @@ protocol_error_t protocol_extract_join_ack_payload(const protocol_frame_t *frame
     return PROTOCOL_OK;
 }
     
-protocol_error_t protocol_extract_answer_req_payload(const protocol_frame_t *frame, answer_req_payload_t *payload)
+protocol_error_t protocol_extract_press_req_payload(const protocol_frame_t *frame, press_req_payload_t *payload)
 {
     if (frame == NULL || payload == NULL) {
         return PROTOCOL_INVALID_PARAM;
     }
     
-    if (frame->header.frame_type != FRAME_ANSWER_REQ) {
+    if (frame->header.frame_type != FRAME_PRESS_REQ) {
         return PROTOCOL_ERROR;
     }
     
-    if (frame->header.length != sizeof(answer_req_payload_t)) {
+    if (frame->header.length != sizeof(press_req_payload_t)) {
         return PROTOCOL_ERROR;
     }
     
-    memcpy(payload, frame->payload, sizeof(answer_req_payload_t));
+    memcpy(payload, frame->payload, sizeof(press_req_payload_t));
     return PROTOCOL_OK;
 }
 
-protocol_error_t protocol_extract_answer_ack_payload(const protocol_frame_t *frame, answer_ack_payload_t *payload)
+protocol_error_t protocol_extract_press_ack_payload(const protocol_frame_t *frame, press_ack_payload_t *payload)
 {
     if (frame == NULL || payload == NULL) {
         return PROTOCOL_INVALID_PARAM;
     }
     
-    if (frame->header.frame_type != FRAME_ANSWER_ACK) {
+    if (frame->header.frame_type != FRAME_PRESS_ACK) {
         return PROTOCOL_ERROR;
     }
     
-    if (frame->header.length != sizeof(answer_ack_payload_t)) {
+    if (frame->header.length != sizeof(press_ack_payload_t)) {
         return PROTOCOL_ERROR;
     }
     
-    memcpy(payload, frame->payload, sizeof(answer_ack_payload_t));
+    memcpy(payload, frame->payload, sizeof(press_ack_payload_t));
     return PROTOCOL_OK;
 }
 
@@ -347,8 +347,8 @@ const char* protocol_get_frame_type_string(uint8_t frame_type)
         case FRAME_JOIN_REQ:     return "JOIN_REQ";
         case FRAME_JOIN_RESP:    return "JOIN_RESP";
         case FRAME_JOIN_ACK:     return "JOIN_ACK";
-        case FRAME_ANSWER_REQ:   return "ANSWER_REQ";
-        case FRAME_ANSWER_ACK:   return "ANSWER_ACK";
+        case FRAME_PRESS_REQ:   return "PRESS_REQ";
+        case FRAME_PRESS_ACK:   return "PRESS_ACK";
         case FRAME_RESET_CMD:    return "RESET_CMD";
         default:                 return "UNKNOWN";
     }

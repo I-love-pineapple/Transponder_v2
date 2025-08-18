@@ -187,9 +187,14 @@ static void e35_test_thread(void *parameter)
             e35_device_set_rf_params(e35_device, E35_RATE_250K, 0, work_channel);
             e35_device_enter_trans_mode(e35_device);
             lpuart_cli->at_mode = 1;//透传
+            LOG_D("入网中 切换信道:%d", work_channel);
         }
 
         result = rt_sem_take(lpuart_sem, 10);
+        if(result != RT_EOK)
+        {
+            continue;
+        }
         rt_thread_mdelay(3);
         len = rt_device_read(lpuart_cli->device, 0, rx_buf, 256);
         if(len > 0)
@@ -213,6 +218,7 @@ static void e35_test_thread(void *parameter)
 
             switch (frame.header.frame_type)
             {
+                /* 广播帧 */
                 case FRAME_JOIN_BEACON:
                 {
                     join_beacon_payload_t payload;
@@ -240,6 +246,7 @@ static void e35_test_thread(void *parameter)
                     gateway_id = payload.gateway_id;
                     work_channel = payload.work_channel;
                     
+                    /* 发送入网请求帧 */
                     len = 256;
                     err = protocol_create_join_req_frame(gateway_id, node_id, rssi, rx_buf, &len);
                     if (err != PROTOCOL_OK)
@@ -255,6 +262,7 @@ static void e35_test_thread(void *parameter)
                     break;
                 }
                 
+                /* 入网应答帧 */
                 case FRAME_JOIN_RESP:
                 {
                     join_resp_payload_t payload;
@@ -294,6 +302,7 @@ static void e35_test_thread(void *parameter)
                     work_channel = payload.work_channel;
                     timeslot = payload.timeslot;
 
+                    /* 发送入网确认帧 */
                     len = 256;
                     err = protocol_create_join_ack_frame(gateway_id, node_id, 0, rx_buf, &len);
                     if (err != PROTOCOL_OK)
@@ -304,7 +313,6 @@ static void e35_test_thread(void *parameter)
 
                     e35_send_data(rx_buf, len);
                     rt_timer_stop(timer_fhss);
-                    join_status = JOIN_STATUS_JOINED;//已入网
 
                     rt_thread_mdelay(100);
 
@@ -313,12 +321,15 @@ static void e35_test_thread(void *parameter)
                     e35_device_enter_trans_mode(e35_device);
                     lpuart_cli->at_mode = 1;//透传
 
+                    join_status = JOIN_STATUS_JOINED;//已入网
+
                     // rt_timer_start(timer_fhss);
                     break;
                 }
 
-                case FRAME_ANSWER_ACK:
-                    LOG_D("Received ANSWER_ACK frame");
+                /* PRESS确认帧 */
+                case FRAME_PRESS_ACK:
+                    LOG_D("Received PRESS_ACK frame");
                     if(join_status != JOIN_STATUS_JOINED)
                     {
                         LOG_D("Not in JOINED status, skip");
@@ -326,10 +337,12 @@ static void e35_test_thread(void *parameter)
                     }
                     break;
 
+                /* 重置命令帧 */
                 case FRAME_RESET_CMD:
                     LOG_D("Received RESET_CMD frame");
                     break;
                 
+                /* 未知帧 */
                 default:
                     LOG_E("Received UNKNOWN frame");
                     break;
@@ -338,19 +351,28 @@ static void e35_test_thread(void *parameter)
     }
 }
 
-void anser_upload(void)
+/* 应答数据上传 */
+void press_upload(uint16_t sequence, uint8_t option, uint8_t battery)
 {
     rt_err_t err;
     char rx_buf[256];
     rt_size_t len = 256;
-    err = protocol_create_answer_req_frame(gateway_id, node_id, 0, 0, 0, rx_buf, &len);
+
+    if(join_status != JOIN_STATUS_JOINED)
+    {
+        LOG_D("Not in JOINED status, skip");
+        return;
+    }
+
+    err = protocol_create_press_req_frame(gateway_id, node_id, sequence, option, battery, rx_buf, &len);
     if (err != PROTOCOL_OK)
     {
-        LOG_E("Failed to create ANSWER_REQ frame, err: %d", err);
+        LOG_E("Failed to create PRESS_REQ frame, err: %d", err);
         return;
     }
 
     e35_send_data(rx_buf, len);
+    LOG_D("发送应答帧");
 }
 
 

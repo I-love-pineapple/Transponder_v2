@@ -27,8 +27,8 @@ typedef enum {
     FRAME_JOIN_REQ       = 0x02,    /**<上行 节点入网请求帧 */
     FRAME_JOIN_RESP      = 0x03,    /**<下行 网关入网响应帧 */
     FRAME_JOIN_ACK       = 0x04,    /**<上行 节点入网确认帧 */
-    FRAME_ANSWER_REQ     = 0x11,    /**<上行 应答数据上传帧 */
-    FRAME_ANSWER_ACK     = 0x12,    /**<下行 应答确认帧 */
+    FRAME_PRESS_REQ     = 0x11,    /**<上行 应答数据上传帧 */
+    FRAME_PRESS_ACK     = 0x12,    /**<下行 应答确认帧 */
     FRAME_RESET_CMD      = 0x14     /**<下行 重置命令帧 */
 } frame_type_t;
 /** @} */
@@ -111,7 +111,7 @@ typedef struct __attribute__((packed)) {
 } join_ack_payload_t;
 
 /**
- * @brief ANSWER_REQ帧载荷
+ * @brief PRESS_REQ帧载荷
  */
 typedef struct __attribute__((packed)) {
     uint32_t gateway_id;    /**< 网关ID */
@@ -119,17 +119,17 @@ typedef struct __attribute__((packed)) {
     uint16_t sequence;      /**< 序列号 */
     uint8_t  option;        /**< 选项 */
     uint8_t  battery;       /**< 电池电量(%) */
-} answer_req_payload_t;
+} press_req_payload_t;
 
 /**
- * @brief ANSWER_ACK帧载荷
+ * @brief PRESS_ACK帧载荷
  */
 typedef struct __attribute__((packed)) {
     uint32_t gateway_id;    /**< 网关ID */
     uint32_t node_id;       /**< 节点ID */
     uint8_t  status;        /**< 状态 */
     uint8_t  reserved[3];   /**< 保留字段 */
-} answer_ack_payload_t;
+} press_ack_payload_t;
 
 /**
  * @brief 完整协议帧结构
@@ -239,7 +239,7 @@ protocol_error_t protocol_create_join_ack_frame(uint32_t gateway_id, uint32_t no
                                                uint8_t *frame_data, uint16_t *frame_len);
 
 /**
- * @brief 创建ANSWER_REQ帧
+ * @brief 创建PRESS_REQ帧
  * @param[in] gateway_id 网关ID
  * @param[in] node_id 节点ID
  * @param[in] sequence 序列号
@@ -249,12 +249,12 @@ protocol_error_t protocol_create_join_ack_frame(uint32_t gateway_id, uint32_t no
  * @param[in,out] frame_len 输入缓冲区大小，输出实际帧长度
  * @return 错误码
  */
-protocol_error_t protocol_create_answer_req_frame(uint32_t gateway_id, uint32_t node_id, 
+protocol_error_t protocol_create_press_req_frame(uint32_t gateway_id, uint32_t node_id, 
                                                  uint16_t sequence, uint8_t option, uint8_t battery,
                                                  uint8_t *frame_data, uint16_t *frame_len);
 
 /**
- * @brief 创建ANSWER_ACK帧
+ * @brief 创建PRESS_ACK帧
  * @param[in] gateway_id 网关ID
  * @param[in] node_id 节点ID
  * @param[in] status 状态
@@ -262,7 +262,7 @@ protocol_error_t protocol_create_answer_req_frame(uint32_t gateway_id, uint32_t 
  * @param[in,out] frame_len 输入缓冲区大小，输出实际帧长度
  * @return 错误码
  */
-protocol_error_t protocol_create_answer_ack_frame(uint32_t gateway_id, uint32_t node_id, uint8_t status,
+protocol_error_t protocol_create_press_ack_frame(uint32_t gateway_id, uint32_t node_id, uint8_t status,
                                                  uint8_t *frame_data, uint16_t *frame_len);
 
 /**
@@ -314,20 +314,20 @@ protocol_error_t protocol_extract_join_resp_payload(const protocol_frame_t *fram
 protocol_error_t protocol_extract_join_ack_payload(const protocol_frame_t *frame, join_ack_payload_t *payload);
 
 /**
- * @brief 提取ANSWER_REQ帧载荷
+ * @brief 提取PRESS_REQ帧载荷
  * @param[in] frame 协议帧
  * @param[out] payload 载荷结构
  * @return 错误码
  */
-protocol_error_t protocol_extract_answer_req_payload(const protocol_frame_t *frame, answer_req_payload_t *payload);
+protocol_error_t protocol_extract_press_req_payload(const protocol_frame_t *frame, press_req_payload_t *payload);
 
 /**
- * @brief 提取ANSWER_ACK帧载荷
+ * @brief 提取PRESS_ACK帧载荷
  * @param[in] frame 协议帧
  * @param[out] payload 载荷结构
  * @return 错误码
  */
-protocol_error_t protocol_extract_answer_ack_payload(const protocol_frame_t *frame, answer_ack_payload_t *payload);
+protocol_error_t protocol_extract_press_ack_payload(const protocol_frame_t *frame, press_ack_payload_t *payload);
 /** @} */
 
 /** @defgroup Utility_Functions 工具函数
