@@ -19,6 +19,7 @@ rt_err_t my_button_init(void);
 int rf_init(void);
 int main(void)
 {
+    led_app_init();
     MX_RNG_Init();
     my_button_init();
     rf_init();
