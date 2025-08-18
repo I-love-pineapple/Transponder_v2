@@ -3,6 +3,8 @@
 #include <rtdevice.h>
 #include <board.h>
 #include <drv_common.h>
+#include "led_app.h"
+
 
 #define DBG_TAG "led_app"
 #define DBG_LVL DBG_LOG

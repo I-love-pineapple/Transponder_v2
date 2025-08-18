@@ -5,8 +5,8 @@
   "name": "BUTTON"
  }, 
  {
-  "path": "/packages/misc/state_machine", 
+  "path": "/packages/peripherals/quick_led", 
   "ver": "latest", 
-  "name": "STATE_MACHINE"
+  "name": "QLED"
  }
 ]

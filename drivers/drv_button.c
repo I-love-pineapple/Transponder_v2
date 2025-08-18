@@ -217,12 +217,12 @@ rt_err_t drv_button_init(void)
     Button_Create("key6", &key6_btn, key6_read_level, KEY_TRIGGER_LEVEL);
     
     /* 绑定按键事件回调函数 */
-    Button_Attach(&key1_btn, BUTTON_ALL_RIGGER, button_callback);
-    Button_Attach(&key2_btn, BUTTON_ALL_RIGGER, button_callback);
-    Button_Attach(&key3_btn, BUTTON_ALL_RIGGER, button_callback);
-    Button_Attach(&key4_btn, BUTTON_ALL_RIGGER, button_callback);
-    Button_Attach(&key5_btn, BUTTON_ALL_RIGGER, button_callback);
-    Button_Attach(&key6_btn, BUTTON_ALL_RIGGER, button_callback);
+    // Button_Attach(&key1_btn, BUTTON_ALL_RIGGER, button_callback);
+    // Button_Attach(&key2_btn, BUTTON_ALL_RIGGER, button_callback);
+    // Button_Attach(&key3_btn, BUTTON_ALL_RIGGER, button_callback);
+    // Button_Attach(&key4_btn, BUTTON_ALL_RIGGER, button_callback);
+    // Button_Attach(&key5_btn, BUTTON_ALL_RIGGER, button_callback);
+    // Button_Attach(&key6_btn, BUTTON_ALL_RIGGER, button_callback);
     
     LOG_I("Button driver initialized successfully");
     

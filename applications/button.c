@@ -13,48 +13,48 @@
  * @param btn 触发事件的按键实体指针
  * @note 该函数用于测试按键事件回调功能
  */
-static void my_button_callback(void *btn)
-{
-    Button_t *button = (Button_t *)btn;
-    rt_uint8_t event = Get_Button_Event(button);
+// static void my_button_callback(void *btn)
+// {
+//     Button_t *button = (Button_t *)btn;
+//     rt_uint8_t event = Get_Button_Event(button);
     
-    LOG_D("按键 [%s] 事件: ", button->Name);
+//     LOG_D("按键 [%s] 事件: ", button->Name);
     
-    switch(event)
-    {
-        case BUTTON_DOWM:
-            LOG_D("按下");
-            break;
+//     switch(event)
+//     {
+//         case BUTTON_DOWM:
+//             LOG_D("按下");
+//             break;
             
-        case BUTTON_UP:
-            LOG_D("松开");
-            break;
+//         case BUTTON_UP:
+//             LOG_D("松开");
+//             break;
             
-        case BUTTON_DOUBLE:
-            LOG_D("双击");
-            break;
+//         case BUTTON_DOUBLE:
+//             LOG_D("双击");
+//             break;
             
-        case BUTTON_LONG:
-            LOG_D("长按");
-            break;
+//         case BUTTON_LONG:
+//             LOG_D("长按");
+//             break;
             
-        case BUTTON_LONG_FREE:
-            LOG_D("长按松开");
-            break;
+//         case BUTTON_LONG_FREE:
+//             LOG_D("长按松开");
+//             break;
             
-        case BUTTON_CONTINUOS:
-            LOG_D("持续按下");
-            break;
+//         case BUTTON_CONTINUOS:
+//             LOG_D("持续按下");
+//             break;
             
-        case BUTTON_CONTINUOS_FREE:
-            LOG_D("持续按下松开");
-            break;
+//         case BUTTON_CONTINUOS_FREE:
+//             LOG_D("持续按下松开");
+//             break;
             
-        default:
-            LOG_D("未知事件(%d)", event);
-            break;
-    }
-}
+//         default:
+//             LOG_D("未知事件(%d)", event);
+//             break;
+//     }
+// }
 
 /**
  * @brief 按键驱动处理线程
@@ -107,13 +107,8 @@ rt_err_t my_button_init(void)
         return -RT_ERROR;
     }
     
-    /* 为所有按键绑定测试回调函数 */
-    drv_button_attach_callback("key1", BUTTON_ALL_RIGGER, my_button_callback);
-    drv_button_attach_callback("key2", BUTTON_ALL_RIGGER, my_button_callback);
-    drv_button_attach_callback("key3", BUTTON_ALL_RIGGER, my_button_callback);
-    drv_button_attach_callback("key4", BUTTON_ALL_RIGGER, my_button_callback);
-    drv_button_attach_callback("key5", BUTTON_ALL_RIGGER, my_button_callback);
-    drv_button_attach_callback("key6", BUTTON_ALL_RIGGER, my_button_callback);
+    /* 注意：按键回调函数现在由应用程序统一管理 */
+    /* 在main.c中调用app_register_button_callbacks()进行注册 */
     
     return RT_EOK;
 }

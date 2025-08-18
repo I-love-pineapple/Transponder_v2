@@ -279,6 +279,13 @@
 #define BUTTON_DOUBLE_TIME 15
 #define BUTTON_LONG_TIME 50
 #define PKG_USING_BUTTON_V101
+#define PKG_USING_QLED
+#define QLED_TOTAL 3
+#define QLED_TIME_UNIT_MS 10
+#define QLED_THREAD_NAME "qled"
+#define QLED_THREAD_STACK_SIZE 512
+#define QLED_THREAD_PRIO 12
+#define PKG_USING_QLED_LATEST_VERSION
 /* end of peripheral libraries and drivers */
 
 /* AI packages */
