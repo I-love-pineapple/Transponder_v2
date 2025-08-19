@@ -22,6 +22,7 @@
 #include "drv_button.h"
 #include "protocol.h"
 #include "applications.h"
+#include "e35_module.h"
 
 #define DBG_TAG "app"
 #define DBG_LVL DBG_LOG
@@ -40,6 +41,12 @@
 
 /** @brief 应用程序线程时间片 */
 #define APP_THREAD_TIMESLICE        10
+
+/** @brief 初始退避窗口 */
+#define INITIAL_BACKOFF_WINDOW      8
+
+/** @brief 最大退避窗口 */
+#define MAX_BACKOFF_WINDOW          64
 
 /** @brief 按键上传重传间隔（毫秒） */
 #define KEY_UPLOAD_RETRY_INTERVAL   100
@@ -74,6 +81,9 @@ typedef struct
     rt_uint8_t retry_count;         /**< 重传次数 */
     rt_tick_t start_time;           /**< 开始时间 */
     rt_timer_t retry_timer;         /**< 重传定时器 */
+    rt_uint32_t backoff_window;     /**< 退避窗口 */
+    rt_uint8_t restart;             /**< 是否需要重启定时器 */
+    rt_uint8_t timer_out;           /**< 定时器是否超时 */
 } key_upload_state_t;
 
 /**
@@ -182,40 +192,16 @@ static void app_set_system_state(sys_state_t new_state)
 static void app_key_upload_retry_timeout(void *parameter)
 {
     key_upload_state_t *upload_state = &g_app_ctrl.upload_state;
+    rt_err_t err;
 
     if (!upload_state->is_uploading)
     {
+        rt_timer_stop(upload_state->retry_timer);
         LOG_W("按键上传重传定时器触发，但当前未在上传状态");
         return;
     }
 
-    /* 检查是否超过最大重传次数 */
-    if (upload_state->retry_count >= KEY_UPLOAD_MAX_RETRY)
-    {
-        LOG_E("按键上传重传次数超限，上传失败");
-        upload_state->is_uploading = RT_FALSE;
-        app_set_system_state(SYS_STATE_JOINED);
-        return;
-    }
-
-    /* 检查是否超时 */
-    rt_tick_t elapsed = rt_tick_get() - upload_state->start_time;
-    if (elapsed * 1000 / RT_TICK_PER_SECOND >= KEY_UPLOAD_TIMEOUT)
-    {
-        LOG_E("按键上传超时，上传失败");
-        upload_state->is_uploading = RT_FALSE;
-        app_set_system_state(SYS_STATE_JOINED);
-        return;
-    }
-
-    /* 执行重传 */
-    upload_state->retry_count++;
-    LOG_D("按键上传重传，第%d次，序列号:%d", upload_state->retry_count, upload_state->sequence);
-
-    press_upload(upload_state->sequence, upload_state->key_option, app_get_battery_level());
-
-    /* 重新启动重传定时器 */
-    rt_timer_start(upload_state->retry_timer);
+    upload_state->timer_out = RT_TRUE;
 }
 
 /**
@@ -232,7 +218,8 @@ static rt_err_t app_start_key_upload(rt_uint8_t key_option)
 
     /* 检查当前状态 */
     rt_mutex_take(g_app_ctrl.state_mutex, RT_WAITING_FOREVER);
-    if (g_app_ctrl.current_state != SYS_STATE_JOINED)
+    if ((g_app_ctrl.current_state != SYS_STATE_JOINED) &&
+        (g_app_ctrl.current_state != SYS_STATE_KEY_UPLOADING))
     {
         rt_mutex_release(g_app_ctrl.state_mutex);
         LOG_W("当前状态不允许按键上传，状态: %d", g_app_ctrl.current_state);
@@ -253,6 +240,7 @@ static rt_err_t app_start_key_upload(rt_uint8_t key_option)
     upload_state->key_option = key_option;
     upload_state->retry_count = 0;
     upload_state->start_time = rt_tick_get();
+    upload_state->backoff_window = INITIAL_BACKOFF_WINDOW;
 
     /* 切换到上传状态 */
     app_set_system_state(SYS_STATE_KEY_UPLOADING);
@@ -262,6 +250,12 @@ static rt_err_t app_start_key_upload(rt_uint8_t key_option)
     /* 发送第一次上传 */
     press_upload(upload_state->sequence, upload_state->key_option, app_get_battery_level());
 
+    e35_module_state_t tmp_e35_state;
+    e35_get_module_state(&tmp_e35_state);
+    /* 窗口*时隙 */
+    rt_uint32_t random_delay = get_random(40, upload_state->backoff_window * tmp_e35_state.timeslot);
+    LOG_D("下次随机退避延迟: %dms", random_delay);
+    rt_timer_control(upload_state->retry_timer, RT_TIMER_CTRL_SET_TIME, &random_delay);
     /* 启动重传定时器 */
     rt_timer_start(upload_state->retry_timer);
 
@@ -358,55 +352,142 @@ static void app_button_callback(void *btn)
 static void app_main_thread_entry(void *parameter)
 {
     rt_err_t result;
+    rt_tick_t start_time;
+    rt_err_t err;
 
     LOG_I("应用程序主线程启动");
 
     /* 初始化为未入网状态 */
     app_set_system_state(SYS_STATE_NOT_JOINED);
 
-    while (1)
+    while(1)
     {
-        /* 等待入网信号量 */
-        result = rt_sem_take(g_app_ctrl.join_sem, RT_WAITING_FOREVER);
-        if (result != RT_EOK)
+        rt_thread_mdelay(10);
+        switch (g_app_ctrl.current_state)
         {
-            LOG_E("等待入网信号量失败: %d", result);
-            continue;
-        }
-
-        LOG_I("收到入网请求，开始入网流程");
-
-        /* 切换到入网中状态 */
-        app_set_system_state(SYS_STATE_JOINING);
-
-        /* 设置E35模块入网状态 */
-        e35_set_join_status(1); /* JOIN_STATUS_JOINING */
-
-        /* 等待入网完成或超时 */
-        rt_tick_t start_time = rt_tick_get();
-        while (1)
-        {
-            rt_thread_mdelay(100);
-
-            /* 检查入网状态 */
-            rt_uint8_t current_status = e35_get_join_status();
-
-            if (current_status == 2) /* JOIN_STATUS_JOINED */
+            case SYS_STATE_NOT_JOINED:
             {
-                LOG_I("入网成功");
-                app_set_system_state(SYS_STATE_JOINED);
+                /* 等待入网信号量 */
+                result = rt_sem_take(g_app_ctrl.join_sem, RT_WAITING_FOREVER);
+                if (result != RT_EOK)
+                {
+                    LOG_E("等待入网信号量失败: %d", result);
+                    continue;
+                }
+
+                LOG_I("收到入网请求，开始入网流程");
+
+                /* 切换到入网中状态 */
+                app_set_system_state(SYS_STATE_JOINING);
+
+                /* 设置E35模块入网状态 */
+                e35_set_join_status(1); /* JOIN_STATUS_JOINING */
+
+                /* 等待入网完成或超时 */
+                start_time = rt_tick_get();
                 break;
             }
 
-            /* 检查超时 */
-            rt_tick_t elapsed = rt_tick_get() - start_time;
-            if (elapsed * 1000 / RT_TICK_PER_SECOND >= JOIN_TIMEOUT)
+            case SYS_STATE_JOINING:
             {
-                LOG_W("入网超时，返回未入网状态");
-                e35_set_join_status(0); /* JOIN_STATUS_NONE */
-                app_set_system_state(SYS_STATE_NOT_JOINED);
+                /* 检查入网状态 */
+                rt_uint8_t current_status = e35_get_join_status();
+
+                if (current_status == 2) /* JOIN_STATUS_JOINED */
+                {
+                    LOG_I("入网成功");
+                    app_set_system_state(SYS_STATE_JOINED);
+                    break;
+                }
+
+                /* 检查超时 */
+                rt_tick_t elapsed = rt_tick_get() - start_time;
+                if (elapsed * 1000 / RT_TICK_PER_SECOND >= JOIN_TIMEOUT)
+                {
+                    LOG_W("入网超时，返回未入网状态");
+                    e35_set_join_status(0); /* JOIN_STATUS_NONE */
+                    app_set_system_state(SYS_STATE_NOT_JOINED);
+                    break;
+                }
                 break;
             }
+
+            case SYS_STATE_JOINED:
+            {
+                
+                break;
+            }
+
+            case SYS_STATE_KEY_UPLOADING:
+            {
+                if (g_app_ctrl.upload_state.timer_out)
+                {
+                    key_upload_state_t *upload_state = &g_app_ctrl.upload_state;
+
+                    upload_state->timer_out = RT_FALSE;
+
+                    /* 检查是否超过最大重传次数 */
+                    if (upload_state->retry_count >= KEY_UPLOAD_MAX_RETRY)
+                    {
+                        LOG_E("按键上传重传次数超限，上传失败");
+                        upload_state->is_uploading = RT_FALSE;
+                        app_set_system_state(SYS_STATE_JOINED);
+                        break;
+                    }
+
+                    /* 检查是否超时 */
+                    rt_tick_t elapsed = rt_tick_get() - upload_state->start_time;
+                    if (elapsed * 1000 / RT_TICK_PER_SECOND >= KEY_UPLOAD_TIMEOUT)
+                    {
+                        LOG_E("按键上传超时，上传失败");
+                        upload_state->is_uploading = RT_FALSE;
+                        app_set_system_state(SYS_STATE_JOINED);
+                        break;
+                    }
+
+                    /* 执行重传 */
+                    upload_state->retry_count++;
+                    upload_state->backoff_window = upload_state->backoff_window * 2;
+                    if (upload_state->backoff_window > MAX_BACKOFF_WINDOW)
+                    {
+                        upload_state->backoff_window = MAX_BACKOFF_WINDOW;
+                    }
+                    LOG_D("按键上传重传，第%d次，序列号:%d", upload_state->retry_count, upload_state->sequence);
+
+                    press_upload(upload_state->sequence, upload_state->key_option, app_get_battery_level());
+                    e35_module_state_t tmp_e35_state;
+                    e35_get_module_state(&tmp_e35_state);
+                    /* 窗口*时隙 */
+                    rt_uint32_t random_delay = get_random(40, upload_state->backoff_window * tmp_e35_state.timeslot);
+                    LOG_D("下次随机退避延迟: %dms", random_delay);
+                    err = rt_timer_control(upload_state->retry_timer, RT_TIMER_CTRL_SET_TIME, &random_delay);
+                    if (err != RT_EOK)
+                    {
+                        LOG_E("设置重传定时器超时失败，错误码: %d", err);
+                        return;
+                    }
+                    /* 重新启动重传定时器 */
+                    err = rt_timer_start(upload_state->retry_timer);
+                    if (err != RT_EOK)
+                    {
+                        LOG_E("启动重传定时器失败，错误码: %d", err);
+                    }
+                }
+                break;
+            }
+
+            case SYS_STATE_KEY_UPLOAD_DONE:
+            {
+                break;
+            }
+
+            case SYS_STATE_SLEEP:
+            {
+                break;
+            }
+
+            default:
+                break;
         }
     }
 }

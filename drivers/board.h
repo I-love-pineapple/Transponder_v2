@@ -391,7 +391,7 @@ extern "C"
 void power_io_init(void);
 void lpuart1_reconfig(void);
 void MX_RNG_Init(void);
-rt_uint32_t get_random(void);
+rt_uint32_t get_random(rt_uint32_t min, rt_uint32_t max);
 #ifdef __cplusplus
 }
 #endif

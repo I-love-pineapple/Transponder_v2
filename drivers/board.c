@@ -152,14 +152,13 @@ void MX_RNG_Init(void)
 
 }
 
-rt_uint32_t get_random(void)
+rt_uint32_t get_random(rt_uint32_t min, rt_uint32_t max)
 {
     rt_uint32_t random32bit;     // 32bit 随机数变量
     HAL_RNG_GenerateRandomNumber(&hrng, &random32bit);
     LOG_D("random32bit: %lu", random32bit);
-    return random32bit;
+    return random32bit % (max - min + 1) + min;
 }
-MSH_CMD_EXPORT(get_random, get random number);
 
 #endif /* BSP_USING_RNG */
 
