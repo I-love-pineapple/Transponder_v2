@@ -1,3 +1,6 @@
 [submodule "packages/button-v1.0.1"]
 	path = packages/button-v1.0.1
 	url = git@github.com:I-love-pineapple/Transponder_v2_button.git
+[submodule "packages/quick_led-latest"]
+	path = packages/quick_led-latest
+	url = https://github.com/qiyongzhong0/rt-thread-qled.git

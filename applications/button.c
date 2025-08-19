@@ -12,6 +12,7 @@
  * @brief 按键测试回调函数
  * @param btn 触发事件的按键实体指针
  * @note 该函数用于测试按键事件回调功能
+ * @warning 此函数已被注释，实际按键回调由applications.c管理
  */
 // static void my_button_callback(void *btn)
 // {
@@ -58,8 +59,9 @@
 
 /**
  * @brief 按键驱动处理线程
- * @param parameter 线程参数
- * @note 该线程周期性调用按键处理函数，用于测试按键事件检测
+ * @param parameter 线程参数（未使用）
+ * @note 该线程周期性调用按键处理函数，以20ms间隔检测按键事件
+ * @see drv_button_process()
  */
 static void button_process_thread(void *parameter)
 {
@@ -72,6 +74,11 @@ static void button_process_thread(void *parameter)
 
 /**
  * @brief 按键驱动初始化函数
+ * @return rt_err_t 初始化结果
+ * @retval RT_EOK 初始化成功
+ * @retval -RT_ERROR 初始化失败
+ * @note 初始化按键驱动并创建按键处理线程
+ * @warning 按键回调函数需要通过app_register_button_callbacks()注册
  */
 rt_err_t my_button_init(void)
 {

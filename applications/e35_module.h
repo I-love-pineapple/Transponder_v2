@@ -138,6 +138,24 @@ void e35_set_join_status(join_status_t status);
 join_status_t e35_get_join_status(void);
 
 /**
+ * @brief 启动入网流程
+ * @return rt_err_t 启动结果
+ * @retval RT_EOK 启动成功
+ * @retval -RT_EBUSY 已在入网中
+ * @note 该函数启动E35模块的入网流程，设置入网状态并开始监听JOIN_BEACON
+ */
+rt_err_t e35_start_join(void);
+
+/**
+ * @brief 获取入网超时状态回调
+ * @return rt_bool_t 入网是否超时
+ * @retval RT_TRUE 入网超时
+ * @retval RT_FALSE 入网正常
+ * @note 该函数用于外部查询入网是否超时
+ */
+rt_bool_t e35_is_join_timeout(void);
+
+/**
  * @}
  */
 

@@ -36,8 +36,15 @@ at_client_t lpuart_cli = RT_NULL;
 /** @brief E35模块状态管理结构体 */
 static e35_module_state_t g_e35_state = {0};
 
+/** @brief 入网超时定时器 */
+static rt_timer_t g_join_timer = RT_NULL;
+
+/** @brief 入网超时标志 */
+static volatile rt_bool_t g_join_timeout_flag = RT_FALSE;
+
 /** @brief 外部函数声明 */
 extern void app_handle_press_ack(void);
+extern void network_handle_join_timeout(void);
 
 /**
  * @}
@@ -65,6 +72,9 @@ const rt_uint8_t beacon_ch_table[3] = {0, 27, 54};
 
 /** @brief 跳频定时器周期（毫秒） */
 #define FHSS_TIMER_PERIOD       4000
+
+/** @brief 入网超时时间（毫秒） */
+#define JOIN_TIMEOUT_PERIOD     10000
 
 /**
  * @}
@@ -267,6 +277,23 @@ static void fhss_timeout(void *parameter)
 }
 
 /**
+ * @brief 入网超时回调函数
+ * @param parameter 定时器参数
+ * @note 该函数在入网超时时被调用，设置超时标志
+ * @warning 此函数在中断上下文中执行，不能使用互斥量等阻塞操作
+ */
+static void join_timeout_callback(void *parameter)
+{
+    if (g_e35_state.join_status == JOIN_STATUS_JOINING)
+    {
+        LOG_W("入网超时（10秒），设置超时标志");
+        
+        /* 设置超时标志，由通信线程处理具体的超时逻辑 */
+        g_join_timeout_flag = RT_TRUE;
+    }
+}
+
+/**
  * @brief 切换工作信道
  * @param channel 目标信道
  * @return rt_err_t 切换结果
@@ -368,9 +395,21 @@ static void e35_comm_thread(void *parameter)
                                  RT_NULL, FHSS_TIMER_PERIOD,
                                  RT_TIMER_FLAG_PERIODIC);
 
+    /* 创建入网超时定时器（全局变量） */
+    g_join_timer = rt_timer_create("join_timeout", join_timeout_callback,
+                                   RT_NULL, JOIN_TIMEOUT_PERIOD,
+                                   RT_TIMER_FLAG_ONE_SHOT);
+
     if (timer_fhss == RT_NULL)
     {
         LOG_E("创建跳频定时器失败");
+        return;
+    }
+
+    if (g_join_timer == RT_NULL)
+    {
+        LOG_E("创建入网超时定时器失败");
+        rt_timer_delete(timer_fhss);
         return;
     }
 
@@ -384,6 +423,33 @@ static void e35_comm_thread(void *parameter)
 
     while (1)
     {
+        /* 检查入网超时标志 */
+        if (g_join_timeout_flag)
+        {
+            g_join_timeout_flag = RT_FALSE;
+            
+            if (g_e35_state.join_status == JOIN_STATUS_JOINING)
+            {
+                LOG_I("处理入网超时，恢复到未入网状态");
+                g_e35_state.join_status = JOIN_STATUS_NONE;
+                g_e35_state.gateway_id = 0;
+                g_e35_state.work_channel = 0;
+                g_e35_state.timeslot = 0;
+                g_e35_state.ch_switch = 0;
+                
+                /* 停止超时定时器 */
+                if (g_join_timer != RT_NULL)
+                {
+                    rt_timer_stop(g_join_timer);
+                }
+                
+                /* 通知网络管理器入网超时 */
+                network_handle_join_timeout();
+                
+                LOG_I("入网流程已重置，等待下次入网请求");
+            }
+        }
+        
         /* 处理信道切换 */
         e35_handle_channel_switch();
 
@@ -571,6 +637,13 @@ static void e35_comm_thread(void *parameter)
                 /* 更新入网状态 */
                 g_e35_state.join_status = JOIN_STATUS_JOINED;
 
+                /* 停止入网超时定时器并重置标志 */
+                if (g_join_timer != RT_NULL)
+                {
+                    rt_timer_stop(g_join_timer);
+                }
+                g_join_timeout_flag = RT_FALSE;
+
                 LOG_I("入网成功！工作信道:%d，时隙:%d",
                       g_e35_state.work_channel, g_e35_state.timeslot);
 
@@ -618,6 +691,13 @@ static void e35_comm_thread(void *parameter)
     {
         rt_timer_stop(timer_fhss);
         rt_timer_delete(timer_fhss);
+    }
+
+    if (g_join_timer != RT_NULL)
+    {
+        rt_timer_stop(g_join_timer);
+        rt_timer_delete(g_join_timer);
+        g_join_timer = RT_NULL;
     }
 
     LOG_I("E35无线通信线程退出");
@@ -738,6 +818,56 @@ void e35_set_join_status(rt_uint8_t status)
 rt_uint8_t e35_get_join_status(void)
 {
     return (rt_uint8_t)g_e35_state.join_status;
+}
+
+/**
+ * @brief 启动入网流程
+ * @return rt_err_t 启动结果
+ * @retval RT_EOK 启动成功
+ * @retval -RT_ERROR 启动失败
+ * @note 该函数启动E35模块的入网流程
+ */
+rt_err_t e35_start_join(void)
+{
+    if (g_e35_state.join_status == JOIN_STATUS_JOINING)
+    {
+        LOG_W("已在入网中");
+        return -RT_EBUSY;
+    }
+
+    if (g_e35_state.join_status == JOIN_STATUS_JOINED)
+    {
+        LOG_I("已入网，先离网");
+        g_e35_state.join_status = JOIN_STATUS_NONE;
+    }
+
+    LOG_I("启动入网流程");
+    
+    /* 设置入网状态 */
+    g_e35_state.join_status = JOIN_STATUS_JOINING;
+    g_e35_state.gateway_id = 0;
+    g_e35_state.work_channel = 0;
+    g_e35_state.timeslot = 0;
+    g_e35_state.ch_switch = 0;
+    
+    /* 重置超时标志 */
+    g_join_timeout_flag = RT_FALSE;
+    
+    /* 启动入网超时定时器 */
+    if (g_join_timer != RT_NULL)
+    {
+        rt_timer_stop(g_join_timer);  /* 先停止（如果正在运行） */
+        rt_timer_start(g_join_timer); /* 重新启动10秒超时 */
+        LOG_D("入网超时定时器已启动（10秒）");
+    }
+    else
+    {
+        LOG_W("入网超时定时器未创建");
+    }
+    
+    LOG_I("入网流程已启动，等待JOIN_BEACON...");
+    
+    return RT_EOK;
 }
 
 
